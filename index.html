@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fast Chama</title>
+<style>
+  body{background:#000;color:#fff;font-family:Arial;margin:0;min-height:100vh;display:flex;justify-content:center;align-items:center;}
+  .container{width:100%;max-width:420px;padding:15px;background:#000;min-height:100vh;}
+  .card{background:#fff;color:#000;padding:25px;border-radius:12px;margin:10px 0;}
+  input,textarea{display:block;width:100%;padding:10px;margin:10px 0;}
+  button{width:100%;padding:12px;background:#000;color:#fff;border:none;margin-top:10px;}
+</style>
+</head>
+<body>
+<div class="container">
+  <div id="app"></div>
+</div>
+<script>
+const FIRST_NAMES=["Wanjiru","Mwende","Achieng","Abdi","Kamau","Njoki","Otieno","Ibrahim","Grace","Mercy","Juma","Omondi","Wanjala","Esther","Hassan","Amina","Mutiso","Chebet","Kibet","Njeri"];
+const SURNAMES=["Mwangi","Ochieng","Odhiambo","Wambui","Aden","Ali","Kimani","Mutua","Okoth","Omondi","Awuor","Kilonzo","Ndegwa","Otieno","Mugo","Wekesa","Cheruiyot","Langat","Koech"];
+const TOTAL_MEMBERS=8000, GROUPS=5, MEMBERS_PER_GROUP=TOTAL_MEMBERS/GROUPS, CONTRIBUTION_AMOUNT=5, PRIMARY="#c9a227";
+
+function randomName(){return FIRST_NAMES[Math.floor(Math.random()*FIRST_NAMES.length)]+" "+SURNAMES[Math.floor(Math.random()*SURNAMES.length)];}
+function generateMembers(count){return Array.from({length:count},(_,i)=>({name:randomName(),contribution:0,nextPayout:i+1}));}
+let groups=Array.from({length:GROUPS},(_,g)=>({id:g+1,members:generateMembers(MEMBERS_PER_GROUP),currentIndex:0}));
+
+let step=1, fullName="", phone="", email="", address="", password="", rePassword="", termsAccepted=false, mpesaMessage="", memberID="", dateTime=new Date(), onlineMembers=TOTAL_MEMBERS;
+
+const app=document.getElementById("app");
+
+function render(){
+  app.innerHTML="";
+  if(step===1){
+    const card=document.createElement("div"); card.className="card";
+    card.innerHTML=`
+      <h2 style="text-align:center">FAST CHAMA</h2>
+      <input placeholder="Full name" id="fullName"/>
+      <input placeholder="Phone" id="phone"/>
+      <input placeholder="Email" id="email"/>
+      <input placeholder="Address" id="address"/>
+      <input type="password" placeholder="Password" id="password"/>
+      <input type="password" placeholder="Re-type" id="rePassword"/>
+      <div><input type="checkbox" id="terms"/> Accept terms</div>
+      <button id="continue">Continue</button>
+    `;
+    app.appendChild(card);
+    document.getElementById("fullName").oninput=e=>fullName=e.target.value;
+    document.getElementById("phone").oninput=e=>phone=e.target.value;
+    document.getElementById("email").oninput=e=>email=e.target.value;
+    document.getElementById("address").oninput=e=>address=e.target.value;
+    document.getElementById("password").oninput=e=>password=e.target.value;
+    document.getElementById("rePassword").oninput=e=>rePassword=e.target.value;
+    document.getElementById("terms").onchange=e=>termsAccepted=e.target.checked;
+    document.getElementById("continue").onclick=()=>{
+      if(!fullName||!phone||!email||!address||!password||!rePassword||!termsAccepted){alert("Fill all fields");return;}
+      if(password!==rePassword){alert("Passwords mismatch");return;}
+      step=2; render();
+    };
+  } else if(step===2){
+    const card=document.createElement("div"); card.className="card";
+    card.innerHTML=`
+      <h2 style="text-align:center">CONGRATULATIONS!</h2>
+      <p style="text-align:center;font-weight:bold;">MAKE PAYMENT OF 50 TO 0707564058 TO SECURE YOUR DASHBOARD ID</p>
+      <textarea placeholder="Paste M-Pesa message" id="mpesaMessage"></textarea>
+      <button id="verify">VERIFY PAYMENT</button>
+    `;
+    app.appendChild(card);
+    document.getElementById("mpesaMessage").oninput=e=>mpesaMessage=e.target.value;
+    document.getElementById("verify").onclick=()=>{
+      if(!mpesaMessage){alert("Paste message"); return;}
+      memberID="FC"+Math.floor(1000+Math.random()*9000); step=3; render(); startSimulation();
+    };
+  } else if(step===3){
+    const header=document.createElement("div");
+    header.innerHTML=`<div>${dateTime.toLocaleDateString()} ${dateTime.toLocaleTimeString()}</div><div>Members online: ${onlineMembers}</div>`;
+    app.appendChild(header);
+    const welcome=document.createElement("h2"); welcome.textContent="FAST CHAMA AUTO PAYOUT"; app.appendChild(welcome);
+    const info=document.createElement("p"); info.textContent=\`Welcome ${fullName} — ID: ${memberID}\`; app.appendChild(info);
+    groups.forEach(g=>{
+      const div=document.createElement("div"); div.style.background="#111"; div.style.margin="10px 0"; div.style.padding="10px"; div.style.borderRadius="8px";
+      div.innerHTML=`<h3>Group ${g.id}</h3><p style="color:${PRIMARY}">Next payout: ${g.members[g.currentIndex].name}</p><ul>${g.members.slice(0,8).map(m=>\`<li>${m.name} — KSh ${m.contribution}</li>\`).join("")}<li>…and more</li></ul>`;
+      app.appendChild(div);
+    });
+  }
+}
+
+function startSimulation(){
+  setInterval(()=>{
+    groups=groups.map(g=>{const newMembers=g.members.map(m=>({...m,contribution:m.contribution+CONTRIBUTION_AMOUNT})); return {...g,members:newMembers,currentIndex:(g.currentIndex+1)%MEMBERS_PER_GROUP}});
+    onlineMembers=Math.floor(TOTAL_MEMBERS*(0.8+Math.random()*0.2));
+    dateTime=new Date();
+    render();
+  },3000);
+}
+
+render();
+</script>
+</body>
+</html>
